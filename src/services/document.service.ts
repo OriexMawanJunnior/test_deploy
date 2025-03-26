@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import { OpenAI } from "openai";
 import { supabase } from "../lib/supabaseClient";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export const getLatestDocument = async (req: any, res: any) => {
     const { categoryId } = req.params;
 
@@ -62,7 +60,31 @@ export const addNewDocument = async (req: any, res: any) => {
     if (insertError) return res.status(500).json({ error: insertError.message });
 
     const chunks = chunkDocument(content);
+    
+    const { data: categoryData, error: categoryError } = await supabase
+        .from("helpdesk_categories")
+        .select("workspace_id")
+        .eq("id", categoryId)
+        .single();
 
+    if (categoryError || !categoryData?.workspace_id) {
+        res.status(400).json({ error: "Workspace ID not found for this category" });
+        return;
+    }
+
+    const { data: workspaceData, error: workspaceError } = await supabase
+        .from("workspaces")
+        .select("selected_api_key")
+        .eq("id", categoryData.workspace_id)
+        .single();
+
+    if (workspaceError || !workspaceData?.selected_api_key) {
+        res.status(400).json({ error: "No API key selected for this workspace" });
+        return;
+    }
+
+    const openai = new OpenAI({ apiKey: workspaceData.selected_api_key });
+    
     for (const chunk of chunks) {
         const embeddingResponse = await openai.embeddings.create({
             model: "text-embedding-3-small",
