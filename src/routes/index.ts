@@ -1,0 +1,33 @@
+import express from "express";
+import gemini from "./testmodel";
+import openai from "./openai";
+import { processText, translateText } from "../services/ai-text.service";
+import { validate } from "../middleware/validate";
+import { imageGenerationSchema } from "../schemas/image.schema";
+import { translationSchema } from "../schemas/translation.schema";
+import { authMiddleware } from "../middleware/auth";
+import { processImageGeneration } from "../services/ai-image.service";
+import { textSchema } from "../schemas/text.schemaa";
+import webhookRoute from "./webhook";
+import helpdeskCategories from "./helpdesk/categories";
+import helpdeskChat from "./helpdesk/chat";
+import helpdeskDocument from "./helpdesk/document";
+import helpdeskFAQ from "./helpdesk/faq";
+import biling from "./biling";
+import stripe from "./stripe";
+const router = express.Router();
+
+router.use(gemini);
+router.use(openai);
+router.use("/ai-text", authMiddleware, validate(textSchema), processText);
+router.use("/ai-translation", authMiddleware, validate(translationSchema), translateText);
+router.use('/ai-image', authMiddleware, validate(imageGenerationSchema), processImageGeneration);
+router.use("/webhook", webhookRoute);
+router.use("/helpdesk/categories", helpdeskCategories);
+router.use("/helpdesk/chat", helpdeskChat);
+router.use("/helpdesk/document", helpdeskDocument);
+router.use("/helpdesk/faq", helpdeskFAQ);
+router.use("/biling", biling);
+router.use("/stripe", stripe);
+
+export default router;
