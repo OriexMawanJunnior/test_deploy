@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 
 export const getFAQs = async (req: any, res: any) => {
     const { categoryId } = req.params;
